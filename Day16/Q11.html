@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOM Manipulation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            padding: 20px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 id="main-heading">Original Heading</h1>
+
+    <p>This is paragraph 1.</p>
+    <p>This is paragraph 2.</p>
+    <p>This is paragraph 3.</p>
+
+    <div class="container">
+        This is a container div.
+    </div>
+
+    <script>
+        // 1. Change <h1> text using ID
+        let heading = document.getElementById("main-heading");
+        heading.textContent = "Welcome to the DOM World!";
+
+        // 2. Select all <p> tags and change text color to blue
+        let paragraphs = document.getElementsByTagName("p");
+        for (let i = 0; i < paragraphs.length; i++) {
+            paragraphs[i].style.color = "blue";
+        }
+
+        // 3. Change background color of first div with class 'container'
+        let containerDiv = document.querySelector(".container");
+        containerDiv.style.backgroundColor = "yellow";
+    </script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic DOM Manipulation</title>
+</head>
+<body>
+
+    <h2>DOM Manipulation Task</h2>
+
+    <ul id="item-list">
+        <li>Item 1</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
+    </ul>
+
+    <button id="add-btn">Add Item</button>
+
+    <script>
+        // Select the ul using querySelector
+let ul = document.querySelector("#item-list");
+
+// Select the button
+let btn = document.querySelector("#add-btn");
+
+// Add click event
+btn.addEventListener("click", function() {
+    
+    // Count current li items
+    let count = ul.children.length + 1;  // next item number
+
+    // Create new li
+    let li = document.createElement("li");
+    li.textContent = "New Item " + count;
+
+    // Styling based on odd/even position
+    if (count % 2 === 1) {
+        // Odd
+        li.style.fontWeight = "bold";
+        li.style.color = "blue";
+    } else {
+        // Even
+        li.style.fontStyle = "italic";
+        li.style.color = "red";
+    }
+
+    // Append to ul
+    ul.appendChild(li);
+});
+
+    </script>
+</body>
+</html>

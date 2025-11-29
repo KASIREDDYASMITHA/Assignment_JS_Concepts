@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive DOM Manipulation</title>
+</head>
+<body>
+
+    <h2>Interactive DOM Manipulation</h2>
+
+    <!-- Input for color -->
+    <input id="color-input" type="text" placeholder="Enter a color name">
+    <button id="bg-btn">Change Background</button>
+    <br><br>
+
+    <!-- Input for text update -->
+    <input id="text-input" type="text" placeholder="Enter new text">
+    <button id="text-btn">Update Text</button>
+    <br><br>
+
+    <!-- Div whose background and text will change -->
+    <div id="box" style="width: 300px; height: 150px; background: lightgrey; padding: 20px;">
+        Initial content inside the box.
+    </div>
+
+    <script>
+        // Selecting elements
+let colorInput = document.getElementById("color-input");
+let textInput = document.getElementById("text-input");
+
+let bgButton = document.getElementById("bg-btn");
+let textButton = document.getElementById("text-btn");
+
+let box = document.getElementById("box");
+
+/*
+    Function 1:
+    Change div background using user input color
+*/
+bgButton.addEventListener("click", function () {
+    let color = colorInput.value.trim(); // Get entered color
+
+    // Test if the color is valid by assigning temporarily
+    let test = document.createElement("div");
+    test.style.backgroundColor = color;
+
+    if (test.style.backgroundColor === "") {
+        alert("Invalid color name!");
+    } else {
+        box.style.backgroundColor = color;
+    }
+});
+
+/*
+    Function 2:
+    Update text content inside the div
+*/
+textButton.addEventListener("click", function () {
+    let newText = textInput.value.trim();
+
+    if (newText === "") {
+        alert("Please enter some text!");
+    } else {
+        box.textContent = newText;
+    }
+});
+
+    </script>
+</body>
+</html>
