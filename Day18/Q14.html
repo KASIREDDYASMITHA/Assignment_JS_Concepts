@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>L1 - Enhanced Todo List with localStorage</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+    }
+
+    input, button {
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    #taskList li {
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .completed {
+      text-decoration: line-through;
+      color: gray;
+    }
+
+    .btn {
+      padding: 5px 10px;
+      margin-left: 8px;
+      cursor: pointer;
+    }
+
+    #searchInput {
+      width: 250px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>Enhanced Todo List</h2>
+
+  <!-- Input to add task -->
+  <input type="text" id="taskInput" placeholder="Enter a task">
+  <button id="addBtn" class="btn">Add Task</button>
+
+  <br><br>
+
+  <!-- Search bar -->
+  <input type="text" id="searchInput" placeholder="Search tasks...">
+
+  <!-- List -->
+  <ul id="taskList"></ul>
+
+  <script>
+    const taskInput = document.getElementById("taskInput");
+    const addBtn = document.getElementById("addBtn");
+    const taskList = document.getElementById("taskList");
+    const searchInput = document.getElementById("searchInput");
+
+    let tasks = [];
+
+    // ----------------------------------
+    // Load tasks from localStorage on page load
+    // ----------------------------------
+    window.addEventListener("load", function () {
+      const data = localStorage.getItem("tasks");
+      if (data) {
+        tasks = JSON.parse(data);
+        renderTasks(tasks);
+      }
+    });
+
+    // ----------------------------------
+    // Add new task
+    // ----------------------------------
+    addBtn.addEventListener("click", function () {
+      const text = taskInput.value.trim();
+
+      if (text === "") {
+        alert("Task cannot be empty!");
+        return;
+      }
+
+      const newTask = {
+        id: Date.now(),
+        text: text,
+        completed: false
+      };
+
+      tasks.push(newTask);
+      saveToLocal();
+      renderTasks(tasks);
+
+      taskInput.value = "";
+    });
+
+    // ----------------------------------
+    // Save tasks in localStorage
+    // ----------------------------------
+    function saveToLocal() {
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    // ----------------------------------
+    // Render tasks (filtered or all)
+    // ----------------------------------
+    function renderTasks(taskArray) {
+      taskList.innerHTML = "";
+
+      taskArray.forEach(task => {
+        const li = document.createElement("li");
+
+        const span = document.createElement("span");
+        span.textContent = task.text;
+
+        if (task.completed) {
+          span.classList.add("completed");
+        }
+
+        // Mark complete button
+        const completeBtn = document.createElement("button");
+        completeBtn.textContent = "✓";
+        completeBtn.className = "btn";
+        completeBtn.addEventListener("click", function () {
+          task.completed = !task.completed;
+          saveToLocal();
+          renderTasks(tasks);
+        });
+
+        // Delete button
+        const deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "X";
+        deleteBtn.className = "btn";
+        deleteBtn.addEventListener("click", function () {
+          tasks = tasks.filter(t => t.id !== task.id);
+          saveToLocal();
+          renderTasks(tasks);
+        });
+
+        li.appendChild(span);
+        li.appendChild(completeBtn);
+        li.appendChild(deleteBtn);
+
+        taskList.appendChild(li);
+      });
+    }
+
+    // ----------------------------------
+    // Real-time search feature
+    // ----------------------------------
+    searchInput.addEventListener("input", function () {
+      const q = searchInput.value.toLowerCase();
+
+      const filtered = tasks.filter(task =>
+        task.text.toLowerCase().includes(q)
+      );
+
+      renderTasks(filtered);
+    });
+
+  </script>
+
+</body>
+</html>
