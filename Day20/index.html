@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Book Management App</title>
+  <style>
+    /* Basic layout */
+    :root { --gap: 16px; font-family: Arial, sans-serif; }
+    body { margin:0; display:flex; min-height:100vh; }
+    .sidebar {
+      width: 320px; padding:20px; box-shadow: 2px 0 6px rgba(0,0,0,.06);
+      background:#f8f9fb; box-sizing:border-box;
+    }
+    .main { flex:1; padding:20px; box-sizing:border-box; }
+    h1{ margin:0 0 12px 0; }
+    form input, form button { display:block; width:100%; margin-bottom:8px; padding:8px; box-sizing:border-box; }
+    .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: var(--gap); }
+    .card {
+      background:white; border-radius:8px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,.08);
+      display:flex; flex-direction:column; height:100%;
+    }
+    .cover { height:150px; object-fit:cover; border-radius:6px; width:100%; margin-bottom:8px; }
+    .card .title { font-weight:700; margin-bottom:6px; }
+    .card .meta { flex:1; color:#555; margin-bottom:8px; }
+    .actions { display:flex; gap:8px; }
+    .actions button { padding:6px 8px; flex:1; cursor:pointer; }
+    /* Responsive */
+    @media (max-width:1000px){ .grid{ grid-template-columns: repeat(2,1fr); } .sidebar{ width:260px } }
+    @media (max-width:640px){ body{ flex-direction:column } .sidebar{ width:100% } .grid{ grid-template-columns: repeat(1,1fr); } }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <h2>Add Book</h2>
+    <form id="addBookForm">
+      <input type="text" id="title" placeholder="Title" required />
+      <input type="text" id="author" placeholder="Author" required />
+      <input type="number" step="0.01" id="price" placeholder="Price" required />
+      <input type="text" id="image" placeholder="Image URL" required />
+      <button type="submit">Add Book</button>
+    </form>
+
+    <hr />
+    <h3>Instructions</h3>
+    <p>Use the form to add books. Click Update Author / Delete / View Details on each card.</p>
+  </aside>
+
+  <main class="main">
+    <h1>Books</h1>
+    <div id="booksGrid" class="grid"></div>
+  </main>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    // 1) Add your firebase config here (from Firebase console)
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      projectId: "YOUR_PROJECT_ID",
+      // ... rest of config
+    };
+
+    // 2) Import modular SDK from CDN
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, doc, deleteDoc, updateDoc,
+      onSnapshot, getDocs, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const booksCol = collection(db, "books");
+
+    // UI refs
+    const booksGrid = document.getElementById("booksGrid");
+    const form = document.getElementById("addBookForm");
+    const titleIn = document.getElementById("title");
+    const authorIn = document.getElementById("author");
+    const priceIn = document.getElementById("price");
+    const imageIn = document.getElementById("image");
+
+    // Add book
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const book = {
+        title: titleIn.value.trim(),
+        author: authorIn.value.trim(),
+        price: parseFloat(priceIn.value) || 0,
+        coverImageURL: imageIn.value.trim(),
+        createdAt: Date.now()
+      };
+      try {
+        await addDoc(booksCol, book);
+        form.reset();
+      } catch (err) {
+        alert("Error adding book: " + err.message);
+      }
+    });
+
+    // Realtime listener: automatically updates UI on add/update/delete
+    const q = query(booksCol, orderBy("createdAt", "desc"));
+    onSnapshot(q, snapshot => {
+      // Clear UI
+      booksGrid.innerHTML = "";
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const id = docSnap.id;
+        const card = createCard(id, data);
+        booksGrid.appendChild(card);
+      });
+    }, err => {
+      console.error("Listener error:", err);
+      booksGrid.innerHTML = "<p>Error fetching books. Check console.</p>";
+    });
+
+    // Create a DOM card
+    function createCard(id, data){
+      const div = document.createElement("div");
+      div.className = "card";
+      const img = document.createElement("img");
+      img.className = "cover";
+      img.src = data.coverImageURL || "https://via.placeholder.com/250x150?text=No+Image";
+      img.alt = data.title;
+      const title = document.createElement("div");
+      title.className = "title";
+      title.textContent = data.title;
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.innerHTML = `<strong>Author:</strong> ${data.author || "Unknown"}<br><strong>Price:</strong> ₹${data.price ?? 0}`;
+
+      // actions
+      const actions = document.createElement("div"); actions.className = "actions";
+      // Update author
+      const updBtn = document.createElement("button");
+      updBtn.textContent = "Update Author";
+      updBtn.onclick = async () => {
+        const newAuthor = prompt("Enter new author name:", data.author || "");
+        if (newAuthor !== null) {
+          try {
+            await updateDoc(doc(db, "books", id), { author: newAuthor });
+          } catch (err) { alert("Update failed: " + err.message); }
+        }
+      };
+      // Delete
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.onclick = async () => {
+        if (confirm("Delete this book?")) {
+          try { await deleteDoc(doc(db, "books", id)); } catch (err){ alert("Delete failed: "+err.message); }
+        }
+      };
+      // View details
+      const viewBtn = document.createElement("button");
+      viewBtn.textContent = "View Details";
+      viewBtn.onclick = () => {
+        alert(`Title: ${data.title}\nAuthor: ${data.author}\nPrice: ₹${data.price}\n\nImage: ${data.coverImageURL}`);
+      };
+
+      actions.appendChild(updBtn); actions.appendChild(delBtn); actions.appendChild(viewBtn);
+
+      div.appendChild(img); div.appendChild(title); div.appendChild(meta); div.appendChild(actions);
+      return div;
+    }
+
+    // OPTIONAL: helper to insert dummy data from the browser console:
+    window.insertDummyBooks = async () => {
+      const dummy = [
+        { title:"Clean Code", author:"Robert C. Martin", price:399, coverImageURL:"https://images-na.ssl-images-amazon.com/images/I/41xShlnTZTL._SX374_BO1,204,203,200_.jpg", createdAt: Date.now() },
+        { title:"Eloquent JS", author:"Marijn Haverbeke", price:299, coverImageURL:"https://eloquentjavascript.net/img/cover.jpg", createdAt: Date.now()+1 },
+        { title:"You Don’t Know JS", author:"Kyle Simpson", price:349, coverImageURL:"https://images-na.ssl-images-amazon.com/images/I/51F0mne7q4L._SX379_BO1,204,203,200_.jpg", createdAt: Date.now()+2 },
+        { title:"The Pragmatic Programmer", author:"Andrew Hunt", price:459, coverImageURL:"https://images-na.ssl-images-amazon.com/images/I/41as+WafrFL._SX258_BO1,204,203,200_.jpg", createdAt: Date.now()+3 },
+        { title:"Design Patterns", author:"Gang of Four", price:499, coverImageURL:"https://images-na.ssl-images-amazon.com/images/I/518FqJvR9aL._SX380_BO1,204,203,200_.jpg", createdAt: Date.now()+4 }
+      ];
+      for (const b of dummy) {
+        await addDoc(booksCol, b);
+      }
+      alert("Dummy books added!");
+    };
+
+    // End of script
+  </script>
+</body>
+</html>
